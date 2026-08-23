@@ -1,0 +1,11 @@
+# raw data is NEVER committed — re-download with scripts/fetch_data.sh
+data/raw/
+*.tar.gz
+*.nc
+# large processed tensors stay out too; keep only small demo artifacts
+data/processed/*/samples.npz
+__pycache__/
+*.pyc
+.venv/
+models/*.pt
+models/*.onnx
