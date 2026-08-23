@@ -69,7 +69,10 @@ class OnnxIntensityModel:
             self.session = ort.InferenceSession(
                 str(self.model_path), providers=["CPUExecutionProvider"]
             )
-        except Exception:  # ONNX Runtime exception types vary by release.
+        # ONNX Runtime exposes backend-specific exception classes that are not
+        # part of its stable public API, so this boundary deliberately catches
+        # them all and converts them to a safe readiness code.
+        except Exception:  # noqa: BLE001
             self._fail("MODEL_LOAD_FAILED")
             return
 
@@ -83,7 +86,10 @@ class OnnxIntensityModel:
         if input_config.get("layout", "NCHW") != "NCHW":
             self._fail("MODEL_LAYOUT_UNSUPPORTED")
             return
-        if runtime_input.name != input_config["name"] or runtime_input.shape != expected_shape:
+        if (
+            runtime_input.name != input_config["name"]
+            or runtime_input.shape != expected_shape
+        ):
             self._fail("MODEL_SIGNATURE_MISMATCH")
             return
         runtime_outputs = {item.name for item in self.session.get_outputs()}
@@ -139,7 +145,9 @@ class OnnxIntensityModel:
             raise ModelIntegrityError(self.load_error or "MODEL_NOT_READY")
         input_name = self.manifest["input"]["name"]
         output_name = self.manifest["output"]["name"]
-        output = self.session.run([output_name], {input_name: self.preprocess(image)})[0]
+        output = self.session.run([output_name], {input_name: self.preprocess(image)})[
+            0
+        ]
         estimate = float(output.reshape(-1)[0])
         if not np.isfinite(estimate):
             raise ModelIntegrityError("MODEL_OUTPUT_NOT_FINITE")

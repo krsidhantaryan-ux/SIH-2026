@@ -22,3 +22,4 @@ web/dist/
 .env.*
 !.env.example
 .pytest_cache/
+.ruff_cache/

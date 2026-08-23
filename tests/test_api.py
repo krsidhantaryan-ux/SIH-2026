@@ -1,12 +1,35 @@
+import asyncio
 from io import BytesIO
+from typing import Any
 
-from fastapi.testclient import TestClient
+import httpx
 from PIL import Image
 
 from app.main import app, intensity_model, repository
 
 
-client = TestClient(app)
+class ASGITestClient:
+    """Small synchronous facade over HTTPX's current async ASGI transport."""
+
+    @staticmethod
+    def request(method: str, path: str, **kwargs: Any) -> httpx.Response:
+        async def send() -> httpx.Response:
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(
+                transport=transport, base_url="http://testserver"
+            ) as async_client:
+                return await async_client.request(method, path, **kwargs)
+
+        return asyncio.run(send())
+
+    def get(self, path: str, **kwargs: Any) -> httpx.Response:
+        return self.request("GET", path, **kwargs)
+
+    def post(self, path: str, **kwargs: Any) -> httpx.Response:
+        return self.request("POST", path, **kwargs)
+
+
+client = ASGITestClient()
 STORM_ID = repository.list_storms()[0]["storm_id"]
 
 

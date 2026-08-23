@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from app.domain import (
     CATEGORY_PROFILE_ID,
@@ -44,16 +44,9 @@ class DatasetError(RuntimeError):
 class StormRepository:
     """Loads and derives a compact historical replay from the committed index."""
 
-    REQUIRED_COLUMNS = {
-        "sid",
-        "name",
-        "time",
-        "sat",
-        "vmax",
-        "lat",
-        "lon",
-        "eye_prob",
-    }
+    REQUIRED_COLUMNS: ClassVar[frozenset[str]] = frozenset(
+        {"sid", "name", "time", "sat", "vmax", "lat", "lon", "eye_prob"}
+    )
 
     def __init__(self, index_path: Path):
         self.index_path = index_path
@@ -154,10 +147,13 @@ class StormRepository:
         denominator = sum((value - x_mean) ** 2 for value in x)
         if denominator == 0:
             return 0.0
-        return sum(
-            (x_value - x_mean) * (y_value - y_mean)
-            for x_value, y_value in zip(x, y, strict=True)
-        ) / denominator
+        return (
+            sum(
+                (x_value - x_mean) * (y_value - y_mean)
+                for x_value, y_value in zip(x, y, strict=True)
+            )
+            / denominator
+        )
 
     def _add_derived_values(self, points: list[dict[str, Any]]) -> None:
         for index, point in enumerate(points):
@@ -197,16 +193,18 @@ class StormRepository:
 
             prior_12 = self._find_prior(points, index, 12)
             prior_24 = self._find_prior(points, index, 24)
-            point["change_12h_kt"] = round(
-                point["vmax_kt"] - prior_12["vmax_kt"], 1
-            ) if prior_12 else None
-            point["change_24h_kt"] = round(
-                point["vmax_kt"] - prior_24["vmax_kt"], 1
-            ) if prior_24 else None
+            point["change_12h_kt"] = (
+                round(point["vmax_kt"] - prior_12["vmax_kt"], 1) if prior_12 else None
+            )
+            point["change_24h_kt"] = (
+                round(point["vmax_kt"] - prior_24["vmax_kt"], 1) if prior_24 else None
+            )
 
             slope = clamp(self._linear_slope(points, index), -5.0, 5.0)
             projected_change = slope * 24.0 * 0.62
-            ri_probability = clamp(logistic((projected_change - 30.0) / 8.0), 0.02, 0.96)
+            ri_probability = clamp(
+                logistic((projected_change - 30.0) / 8.0), 0.02, 0.96
+            )
             point["trend_kt_per_hour"] = round(slope, 2)
             point["ri"] = {
                 "probability": round(ri_probability, 3),
@@ -242,9 +240,7 @@ class StormRepository:
                 )
             point["forecasts"] = forecasts
 
-    def _build_storm(
-        self, sid: str, rows: list[SourceRow]
-    ) -> dict[str, Any]:
+    def _build_storm(self, sid: str, rows: list[SourceRow]) -> dict[str, Any]:
         by_time: dict[datetime, list[SourceRow]] = defaultdict(list)
         for row in rows:
             by_time[row.valid_time].append(row)
@@ -262,13 +258,13 @@ class StormRepository:
                     "valid_time": iso_utc(valid_time),
                     "vmax_kt": round(vmax, 1),
                     "latitude": round(median(row.latitude for row in observations), 3),
-                    "longitude": round(median(row.longitude for row in observations), 3),
+                    "longitude": round(
+                        median(row.longitude for row in observations), 3
+                    ),
                     "category": imd_category(vmax),
                     "satellites": sorted({row.satellite for row in observations}),
                     "source_count": len(observations),
-                    "eye_signal": round(median(eye_values), 1)
-                    if eye_values
-                    else None,
+                    "eye_signal": round(median(eye_values), 1) if eye_values else None,
                     "quality": {
                         "status": "valid",
                         "reason_codes": [],
@@ -354,7 +350,10 @@ class StormRepository:
     @staticmethod
     def _alert_id(storm_id: str, valid_time: str) -> str:
         compact_time = (
-            valid_time.replace("-", "").replace(":", "").replace("T", "-").replace("Z", "")
+            valid_time.replace("-", "")
+            .replace(":", "")
+            .replace("T", "-")
+            .replace("Z", "")
         )
         return f"ri-{storm_id}-{compact_time}"
 

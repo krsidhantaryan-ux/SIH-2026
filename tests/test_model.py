@@ -5,7 +5,6 @@ from PIL import Image
 
 from app.model import load_intensity_model
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

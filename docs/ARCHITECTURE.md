@@ -883,7 +883,7 @@ tests/
 docs/
 ```
 
-This is a proposal, not a required immediate refactor. The current `src/build_dataset.py` can be hardened first, then its pure transformations and adapter logic extracted behind tests.
+This remains an evolutionary proposal rather than a required immediate move. The current builder now shares category policy with the application and has safer directory/index handling; source-specific decoding and scientific transformations can be extracted behind golden adapter tests as the dataset expands.
 
 ---
 

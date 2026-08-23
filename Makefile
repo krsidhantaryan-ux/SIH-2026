@@ -24,6 +24,8 @@ build:
 	cd web && npm run build
 
 test:
+	$(PYTHON) -m ruff format --check app src scripts tests
+	$(PYTHON) -m ruff check app src scripts tests
 	$(PYTHON) -m pytest -q
 	cd web && npm run typecheck
 

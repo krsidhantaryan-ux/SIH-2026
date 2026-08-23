@@ -2,7 +2,6 @@ from pathlib import Path
 
 from app.repository import StormRepository
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

@@ -8,8 +8,8 @@ institutional profile can replace them without changing API consumers.
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from datetime import datetime, timezone
-from typing import Iterable
 
 CATEGORY_PROFILE_ID = "imd-demo-scale@1.0"
 RI_DEFINITION_ID = "delta-vmax-gte-30kt-in-24h@1.0"
@@ -70,8 +70,10 @@ def parse_utc(value: str) -> datetime:
 
 
 def iso_utc(value: datetime) -> str:
-    return value.astimezone(timezone.utc).isoformat(timespec="seconds").replace(
-        "+00:00", "Z"
+    return (
+        value.astimezone(timezone.utc)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
     )
 
 
@@ -101,9 +103,9 @@ def bearing_degrees(lat1: float, lon1: float, lat2: float, lon2: float) -> float
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     delta_lambda = math.radians(lon2 - lon1)
     y = math.sin(delta_lambda) * math.cos(phi2)
-    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(
-        phi2
-    ) * math.cos(delta_lambda)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(
+        delta_lambda
+    )
     return (math.degrees(math.atan2(y, x)) + 360.0) % 360.0
 
 

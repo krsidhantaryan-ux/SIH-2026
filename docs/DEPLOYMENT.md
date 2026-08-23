@@ -85,7 +85,7 @@ Direct Python and npm dependencies are pinned and `package-lock.json` is committ
 ```bash
 ./scripts/fetch_data.sh ibtracs
 ./scripts/fetch_data.sh hursat 2013 PHAILIN
-python src/build_dataset.py --hursat-dir data/raw/hursat_phailin
+python -m src.build_dataset --hursat-dir data/raw/hursat_phailin
 ```
 
 Expected tracked/small output:

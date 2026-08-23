@@ -283,8 +283,7 @@ def _analyse_image(image: Image.Image) -> dict[str, Any]:
 
     rotated = list(sample.rotate(180).get_flattened_data())
     symmetry = 1.0 - sum(
-        abs(value - opposite)
-        for value, opposite in zip(pixels, rotated, strict=True)
+        abs(value - opposite) for value, opposite in zip(pixels, rotated, strict=True)
     ) / (len(pixels) * 255.0)
     bright_fraction = sum(value >= 175 for value in pixels) / len(pixels)
     center_mean = _mean(center)
@@ -336,6 +335,44 @@ def _analyse_image(image: Image.Image) -> dict[str, Any]:
     }
 
 
+def _decode_upload(content: bytes) -> Image.Image:
+    try:
+        with Image.open(io.BytesIO(content)) as opened:
+            opened.verify()
+        with Image.open(io.BytesIO(content)) as opened:
+            return ImageOps.exif_transpose(opened).convert("RGB").copy()
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(
+            status_code=422, detail="The file is not a valid image"
+        ) from exc
+
+
+def _run_upload_model(image: Image.Image) -> dict[str, Any]:
+    if image.width < 64 or image.height < 64:
+        raise HTTPException(
+            status_code=422, detail="Image must be at least 64 × 64 pixels"
+        )
+    try:
+        return _analyse_image(image)
+    except ModelIntegrityError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Intensity model is unavailable: {exc}",
+        ) from exc
+
+
+def _parse_optional_valid_time(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Invalid valid_time") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return iso_utc(parsed)
+
+
 @app.post("/api/v1/analysis/upload")
 async def analyse_upload(
     file: Annotated[UploadFile, File(description="PNG, JPEG, or WebP image")],
@@ -350,37 +387,10 @@ async def analyse_upload(
         raise HTTPException(status_code=413, detail="Image exceeds the 10 MB limit")
     if not content:
         raise HTTPException(status_code=422, detail="Uploaded image is empty")
-    try:
-        with Image.open(io.BytesIO(content)) as opened:
-            opened.verify()
-        with Image.open(io.BytesIO(content)) as opened:
-            image = ImageOps.exif_transpose(opened)
-            width, height = image.size
-            if width < 64 or height < 64:
-                raise HTTPException(
-                    status_code=422, detail="Image must be at least 64 × 64 pixels"
-                )
-            analysis = _analyse_image(image)
-    except HTTPException:
-        raise
-    except ModelIntegrityError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Intensity model is unavailable: {exc}",
-        ) from exc
-    except (UnidentifiedImageError, OSError, ValueError) as exc:
-        raise HTTPException(status_code=422, detail="The file is not a valid image") from exc
 
-    parsed_valid_time: str | None = None
-    if valid_time:
-        try:
-            parsed = datetime.fromisoformat(valid_time.replace("Z", "+00:00"))
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
-            parsed_valid_time = iso_utc(parsed)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail="Invalid valid_time") from exc
-
+    image = _decode_upload(content)
+    analysis = _run_upload_model(image)
+    width, height = image.size
     return {
         "analysis_id": f"upload-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}",
         "mode": "user_supplied_demo",
@@ -389,7 +399,7 @@ async def analyse_upload(
         "media_type": file.content_type,
         "size_bytes": len(content),
         "dimensions": {"width": width, "height": height},
-        "valid_time": parsed_valid_time,
+        "valid_time": _parse_optional_valid_time(valid_time),
         "quality": {
             "status": "valid" if min(width, height) >= 256 else "degraded",
             "reason_codes": [] if min(width, height) >= 256 else ["LOW_RESOLUTION"],
@@ -411,7 +421,7 @@ def _report_html(storm: dict[str, Any], analysis: dict[str, Any]) -> str:
     satellites = ", ".join(point["satellites"])
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<title>Cyclone-AI historical analysis — {html.escape(storm['name'])}</title>
+<title>Cyclone-AI historical analysis — {html.escape(storm["name"])}</title>
 <style>
 body{{font:15px/1.55 Inter,system-ui,sans-serif;color:#172033;max-width:900px;margin:40px auto;padding:0 24px}}
 header{{border-bottom:3px solid #335cff;padding-bottom:18px}} .warning{{background:#fff4d6;border:1px solid #e6b84a;padding:12px 16px;border-radius:8px}}
@@ -420,20 +430,20 @@ header{{border-bottom:3px solid #335cff;padding-bottom:18px}} .warning{{backgrou
 table{{border-collapse:collapse;width:100%;margin:16px 0}} th,td{{border-bottom:1px solid #d8deea;text-align:left;padding:10px}} th{{background:#f5f7fb}}
 small{{color:#667085}} @media print{{body{{margin:0}} .no-print{{display:none}}}}
 </style></head><body>
-<header><div class="label">Cyclone-AI · SIH 2026 demonstration</div><h1>{html.escape(storm['name'])} historical analysis</h1>
-<p>Generated {iso_utc(datetime.now(timezone.utc))} · Analysis valid {point['valid_time']}</p></header>
+<header><div class="label">Cyclone-AI · SIH 2026 demonstration</div><h1>{html.escape(storm["name"])} historical analysis</h1>
+<p>Generated {iso_utc(datetime.now(timezone.utc))} · Analysis valid {point["valid_time"]}</p></header>
 <p class="warning"><strong>Machine-generated historical prototype.</strong> This is not an official forecast or public warning.</p>
-<div class="grid"><div class="card"><div class="label">Best-track reference</div><div class="value">{point['vmax_kt']:.0f} kt</div></div>
+<div class="grid"><div class="card"><div class="label">Best-track reference</div><div class="value">{point["vmax_kt"]:.0f} kt</div></div>
 <div class="card"><div class="label">Demo category profile</div><div class="value" style="font-size:18px">{html.escape(category)}</div></div>
-<div class="card"><div class="label">RI trend indicator</div><div class="value">{point['ri']['probability']*100:.0f}%</div></div></div>
+<div class="card"><div class="label">RI trend indicator</div><div class="value">{point["ri"]["probability"] * 100:.0f}%</div></div></div>
 <h2>Past-only trend guidance</h2><table><thead><tr><th>Horizon</th><th>Valid time</th><th>Guidance</th><th>Indicative interval</th></tr></thead><tbody>{forecasts}</tbody></table>
 <h2>Observation and provenance</h2><table><tbody>
-<tr><th>Position</th><td>{point['latitude']:.2f}°, {point['longitude']:.2f}°</td></tr>
+<tr><th>Position</th><td>{point["latitude"]:.2f}°, {point["longitude"]:.2f}°</td></tr>
 <tr><th>Satellite records</th><td>{html.escape(satellites)}</td></tr>
 <tr><th>Category profile</th><td>{CATEGORY_PROFILE_ID}</td></tr>
-<tr><th>RI definition</th><td>{html.escape(point['ri']['definition'])}; threshold {point['ri']['threshold']*100:.0f}%</td></tr>
+<tr><th>RI definition</th><td>{html.escape(point["ri"]["definition"])}; threshold {point["ri"]["threshold"] * 100:.0f}%</td></tr>
 <tr><th>Method</th><td>Historical best-track display plus a past-only linear-trend/persistence baseline. The separate upload laboratory uses the legacy CNN; it does not generate this historical forecast.</td></tr>
-</tbody></table><p><small>Analysis ID: {html.escape(analysis['analysis_id'])}<br>Source index: HURSAT-B1/IBTrACS demonstration data committed with the Cyclone-AI repository.</small></p>
+</tbody></table><p><small>Analysis ID: {html.escape(analysis["analysis_id"])}<br>Source index: HURSAT-B1/IBTrACS demonstration data committed with the Cyclone-AI repository.</small></p>
 <p class="no-print"><button onclick="window.print()">Print / save as PDF</button></p></body></html>"""
 
 

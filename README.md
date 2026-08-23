@@ -146,7 +146,7 @@ To reproduce the original Phailin samples:
 . .venv/bin/activate
 ./scripts/fetch_data.sh ibtracs
 ./scripts/fetch_data.sh hursat 2013 PHAILIN
-python src/build_dataset.py --hursat-dir data/raw/hursat_phailin
+python -m src.build_dataset --hursat-dir data/raw/hursat_phailin
 ```
 
 Raw files and large per-storm tensors remain outside Git. The corrected builder handles fractional category boundaries, empty results, unmatched filenames, and stale category values more safely.

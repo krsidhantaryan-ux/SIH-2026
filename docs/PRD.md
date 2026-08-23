@@ -344,7 +344,7 @@ The following are configuration governed, not scattered constants:
 - unit conversion and rounding rules; and
 - minimum quality requirements for each model.
 
-The current `src/build_dataset.py` mapping is a prototype convenience and requires meteorological review before any operational interpretation.
+The shared demo category profile in `app/domain.py`, used by both the API and dataset builder, requires meteorological review before any operational interpretation.
 
 ---
 
