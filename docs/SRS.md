@@ -11,7 +11,7 @@
 | Product requirements source | [CAI-PRD-001](PRD.md) |
 | Intended audience | Software, ML, data, QA, security, platform, UX, and meteorological reviewers |
 
-> This SRS specifies the intended system, including components not yet implemented. At this revision, the repository implements an initial HURSAT–IBTrACS dataset-building script only. Requirement wording does not assert implementation or operational approval.
+> This SRS specifies the intended system, including components not yet implemented. The repository now implements a demonstration vertical slice: historical Phailin replay, FastAPI contracts, React UI, upload inference through a manifest-driven legacy ONNX model, trend/RI baselines, reports, tests, and container packaging. It does not implement the approved detection/prediction models, live-source operations, persistent audit/identity, or pilot infrastructure. Requirement wording does not assert operational approval.
 
 ---
 
@@ -718,15 +718,17 @@ A future requirements-management issue or machine-readable matrix SHOULD link ea
 
 ## 14. Known gaps in the current repository
 
-As of this SRS version:
+As of this SRS version, the repository implements the historical dataset builder, a 158-row/55-valid-time Phailin replay, FastAPI endpoints, a responsive React UI, upload inference with a checksum-verified ONNX artefact, a manifest-based model replacement contract, trend/persistence and RI-rule baselines, printable reports, alert-review actions, pinned dependencies, automated tests, and a single-container deployment path.
 
-- `src/build_dataset.py` pairs HURSAT IR images with IBTrACS values and writes a NumPy archive/index.
-- `scripts/fetch_data.sh` supports IBTrACS and one HURSAT storm download path.
-- The committed demonstration index contains Cyclone Phailin samples.
-- No detection, intensity, prediction, API, web UI, identity, audit, model registry, container, CI/CD, or production deployment implementation is present.
-- The prototype category constants and wind-label preference require domain validation and versioned policy extraction.
-- Dependency versions are not pinned.
-- Automated tests and schema contracts are not yet present.
+The remaining material gaps are:
+
+- The legacy upload CNN has no independently verified storm-separated metrics or calibrated uncertainty and is restricted to demonstration mode.
+- No broad-area detection model or validated multi-horizon image/environment prediction model is implemented.
+- Historical replay contains one storm and is not a sufficient training/evaluation corpus.
+- INSAT live ingestion, ERA5 features, GridSat detection scenes, and approved source licences/adapters are not integrated.
+- Alert review is in-memory; no PostgreSQL/PostGIS, object storage, durable queue, identity provider, RBAC, or protected persistent audit exists.
+- Container packaging exists, but CI/CD, Kubernetes/IaC, backups, SLO monitoring, and production deployment remain target state.
+- Wind-source harmonisation, category policy, RI policy, and all operational language still require meteorological-owner approval.
 
 These gaps should be converted into epics/issues using the requirement IDs above.
 

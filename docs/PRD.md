@@ -30,7 +30,7 @@ Cyclone-AI is an end-to-end decision-support workspace for monitoring tropical c
 
 The product is intended to reduce repetitive image inspection, improve consistency, and surface rapidly changing systems earlier. It augments rather than replaces established operational workflows such as Dvorak analysis, numerical weather prediction, and expert review.
 
-This PRD defines the desired product. The repository currently contains the initial HURSAT–IBTrACS dataset builder and a Phailin demonstration dataset index. Features described as future or target state are not claims of current implementation.
+This PRD defines the desired product. The repository now contains the initial HURSAT–IBTrACS dataset builder plus a working demonstration MVP: a React analyst console, FastAPI service, Phailin historical replay, past-only trend/RI baselines, report and alert-review flows, and a manifest-driven legacy ONNX intensity model for image uploads. The legacy model is independently unvalidated and explicitly restricted to demonstration use. Features described as shadow, pilot, future, or target state are not claims of current implementation.
 
 ---
 
@@ -432,7 +432,7 @@ An R2 candidate is product-acceptable only when all P0 scenarios pass:
 - Historical labels can be revised and differ by agency; label provenance is mandatory.
 - Source cadence and availability differ, so the system must tolerate partial inputs.
 - Class imbalance is severe for RI and extreme categories.
-- This repository presently has no deployed API, frontend, model artefact, or production infrastructure.
+- The repository has a container-ready single-process demonstration API/frontend and a legacy model artefact, but no approved live-source deployment, trained detection/prediction models, persistent operational data services, institutional identity, or production infrastructure.
 
 ---
 

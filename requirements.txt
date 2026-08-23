@@ -1,5 +1,6 @@
-numpy
-pandas
-xarray
-netCDF4
-matplotlib
+# Reproducible historical data-pipeline dependencies
+numpy==2.4.6
+pandas==3.0.5
+xarray==2026.7.0
+netCDF4==1.7.4
+matplotlib==3.11.1

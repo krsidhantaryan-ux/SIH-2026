@@ -11,7 +11,7 @@
 | Related documents | [Architecture](ARCHITECTURE.md), [SRS](SRS.md), [PRD](PRD.md), [UI/UX](UI_UX.md) |
 | Audience | Developers, release engineers, SRE/platform, security, ML operations, and technical reviewers |
 
-> **Readiness notice:** the repository currently contains a Python dataset builder, not a deployable API/web/ML platform. There are no Dockerfiles, Compose manifests, Kubernetes charts, Terraform modules, database migrations, trained model packages, CI workflows, or production runbooks yet. Commands marked **current** apply now; sections marked **target** define the deployment contract to implement.
+> **Readiness notice:** the repository now contains a deployable demonstration vertical slice: FastAPI, compiled React UI, a checksum-pinned legacy ONNX model, tests, Dockerfile, and hardened Compose profile. It remains a single-process historical demo—not a shadow/pilot platform. There are no Kubernetes/Terraform modules, durable database/queue/object store, institutional identity, protected audit, CI workflow, live-source scheduler, validated operational models, backups, or production SLOs yet. Commands marked **current** apply now; sections marked **target** define later deployment contracts.
 
 ---
 
@@ -30,9 +30,9 @@ This guide does not authorise operational meteorological use. Deployment readine
 | Profile | Purpose | Data | Identity | Availability expectation |
 |---|---|---|---|---|
 | Local batch (**current**) | Build historical dataset samples | Downloaded open historical data | Developer account on workstation | None |
-| Local application (**target**) | Develop/test full vertical slice | Fixtures or approved local historical data | Dev identity or disabled only on loopback/restricted preview | Best effort |
+| Local application (**current**) | Develop/test the single-process MVP vertical slice | Committed historical demo data and approved uploads | Unauthenticated demo profile; bind only to approved local/preview boundary | Best effort |
 | CI (**target**) | Build, test, scan, validate contracts | Synthetic/small licensed fixtures | Workload identity; no personal credentials | Ephemeral |
-| Demo (**target**) | SIH demonstration and stakeholder review | Historical and explicitly approved sample data | Restricted demo access | Best effort with rehearsal |
+| Demo (**current packaging**) | SIH demonstration and stakeholder review through Docker/Compose | Historical and explicitly approved sample data | Restricted demo access; no institutional RBAC yet | Best effort with rehearsal |
 | Staging/shadow (**target**) | Near-real-time validation without authority | Approved feeds and isolated metadata | Institutional OIDC + RBAC | Proposed 99.5% after readiness |
 | Controlled pilot (**target**) | Limited decision support under approved procedure | Approved institutional data | Institutional OIDC + least privilege | Formally agreed SLO/RTO/RPO |
 
@@ -57,7 +57,7 @@ Production/pilot data SHALL NOT be copied to demo or local environments without 
 
 ## 3. Current local batch setup
 
-This is the only implemented execution path at this document revision.
+This remains the implemented path for rebuilding historical data. The application execution path is documented in section 8.
 
 ### 3.1 Prerequisites
 
@@ -78,7 +78,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-`requirements.txt` is currently unpinned. For reproducible releases, pin direct/transitive dependencies with hashes or use a lockfile before relying on this setup in CI.
+Direct Python and npm dependencies are pinned and `package-lock.json` is committed. Before pilot-grade CI, generate a hash-locked Python dependency set and verify all transitive packages/SBOMs rather than relying only on direct version pins.
 
 ### 3.3 Fetch and build data
 
@@ -368,40 +368,38 @@ Cookie-based state changes use CSRF protection consistent with the OIDC/session 
 
 ---
 
-## 8. Target local application workflow
+## 8. Current local application workflow
 
-This section becomes executable once the referenced files exist. It is the desired developer experience, not a current command guarantee.
+The repository includes a working single-origin demo and a separate hot-reload development mode.
 
-### 8.1 Planned prerequisites
+### 8.1 Prerequisites
 
-- Docker Engine with Compose v2 or approved compatible runtime.
-- Python and Node versions declared in repository tool files.
-- CPU-only fixture model packages checked by hash or fetched by a safe setup task.
-- At least 8 GB RAM recommended for a small stack; exact profile measured later.
+- Python 3.11 or later.
+- Node.js 22 or later and npm.
+- Docker Engine with Compose v2 only when using the container path.
+- Approximately 1 GB free local space for development dependencies; runtime artefacts are much smaller.
 
-### 8.2 Planned commands
+### 8.2 Current commands
 
 ```bash
-cp .env.example .env.local        # contains no real secrets
-make bootstrap                    # lock-aware dependency/tool checks
-make dev-infra                    # PostGIS, object store, queue, local OIDC fixture if used
-make migrate
-make seed-fixtures
-make dev                          # API/web/workers bind through one previewable gateway
-make test
-make down
+make install                     # Python venv + locked Python/npm dependencies
+make test                        # backend/model tests + frontend type check
+make run                         # build UI, then serve UI/API on 0.0.0.0:8000
+
+# Or containerised:
+docker compose up --build
 ```
 
-The gateway/dev server must bind to `0.0.0.0` for remote preview and allow the explicitly configured preview host/origin. The UI still calls relative `/api` routes.
+For hot reload, run `make dev-api` and `make dev-web` in separate terminals. Vite binds to `0.0.0.0`, accepts the preview host, and proxies relative `/api` calls to the local API. Browser-facing code never calls the backend through browser `localhost`.
 
-### 8.3 Local profiles
+### 8.3 Current and future profiles
 
-- `core`: DB/object/queue/API/web with fixture inference.
-- `ml-cpu`: small real CPU models.
-- `observability`: local metrics/logs/traces.
-- `integration`: fixture source server and test identity provider.
+- **Current `demo`:** one FastAPI process, compiled React assets, committed historical CSV/images, manifest-driven ONNX runtime, in-memory review state.
+- **Current development:** Vite frontend plus reloadable FastAPI backend, same relative API contract.
+- **Future `core`:** PostGIS, object storage, durable queue, API/web and persistent review/audit.
+- **Future `observability`/`integration`:** telemetry stack, fixture source server and test identity provider.
 
-External provider credentials should not be necessary for the default development/test path.
+External provider credentials are not necessary for the default MVP demonstration and tests.
 
 ---
 

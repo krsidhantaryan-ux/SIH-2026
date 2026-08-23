@@ -21,15 +21,18 @@ import xarray as xr
 IBTRACS_CSV = "data/raw/ibtracs.NI.list.v04r01.csv"
 OUT_DIR = "data/processed"
 
-# IMD classification scale (knots) — used to derive category labels
+# Demo IMD classification profile (knots). Lower-bound comparisons avoid gaps
+# for fractional labels created by time interpolation (for example 27.5 kt).
+# This profile remains subject to meteorological-owner approval.
 IMD_SCALE = [
-    (0, 27, "Low Pressure Area"),
-    (28, 33, "Depression / Deep Depression"),
-    (34, 47, "Cyclonic Storm"),
-    (48, 63, "Severe Cyclonic Storm"),
-    (64, 89, "Very Severe Cyclonic Storm"),
-    (90, 119, "Extremely Severe Cyclonic Storm"),
-    (120, 999, "Super Cyclonic Storm"),
+    (120.0, "Super Cyclonic Storm"),
+    (90.0, "Extremely Severe Cyclonic Storm"),
+    (64.0, "Very Severe Cyclonic Storm"),
+    (48.0, "Severe Cyclonic Storm"),
+    (34.0, "Cyclonic Storm"),
+    (28.0, "Deep Depression"),
+    (17.0, "Depression"),
+    (0.0, "Low Pressure Area"),
 ]
 
 FNAME_RE = re.compile(
@@ -38,8 +41,10 @@ FNAME_RE = re.compile(
 
 
 def imd_category(vmax_kt: float) -> str:
-    for lo, hi, name in IMD_SCALE:
-        if lo <= vmax_kt <= hi:
+    if not np.isfinite(vmax_kt) or vmax_kt < 0:
+        return "Unknown"
+    for lower_bound, name in IMD_SCALE:
+        if vmax_kt >= lower_bound:
             return name
     return "Unknown"
 
@@ -106,11 +111,23 @@ def main():
     index_rows = []
 
     dirs = sorted(set(d for pat in args.hursat_dir for d in glob.glob(pat)))
+    if not dirs:
+        ap.error("no directories matched --hursat-dir")
+
     for d in dirs:
         files = sorted(glob.glob(os.path.join(d, "*.nc")))
         if not files:
+            print(f"! no NetCDF files in {d}, skipping")
             continue
-        sid = FNAME_RE.search(os.path.basename(files[0]))["sid"]
+        first_match = next(
+            (FNAME_RE.search(os.path.basename(path)) for path in files
+             if FNAME_RE.search(os.path.basename(path))),
+            None,
+        )
+        if first_match is None:
+            print(f"! no recognised HURSAT filenames in {d}, skipping")
+            continue
+        sid = first_match["sid"]
         track = ib[ib.SID == sid]
         if track.empty:
             print(f"! no IBTrACS track for {sid}, skipping {d}")
@@ -130,15 +147,27 @@ def main():
         print(f"{sid} {samples[0]['name']}: {len(samples)} samples "
               f"(Vmax {vmax.min():.0f}-{vmax.max():.0f} kt)")
 
-    idx = pd.DataFrame(index_rows)
+    index_columns = [
+        "sid", "name", "time", "sat", "vmax", "lat", "lon", "eye_prob", "category"
+    ]
+    idx = pd.DataFrame(index_rows, columns=index_columns)
     idx_path = os.path.join(OUT_DIR, "index.csv")
-    # append-safe: merge with existing index if present
+    # Append-safe: merge with an existing index and recompute the category using
+    # the current versioned demo policy rather than preserving stale labels.
     if os.path.exists(idx_path):
         old = pd.read_csv(idx_path, parse_dates=["time"])
-        idx = pd.concat([old, idx]).drop_duplicates(["sid", "time", "sat"])
+        idx = pd.concat([old, idx], ignore_index=True).drop_duplicates(
+            ["sid", "time", "sat"], keep="last"
+        )
+    if not idx.empty:
+        idx["category"] = idx["vmax"].map(imd_category)
+        idx = idx.sort_values(["sid", "time", "sat"])
     idx.to_csv(idx_path, index=False)
     print(f"\nTotal samples in index: {len(idx)}  ->  {idx_path}")
-    print(idx["category"].value_counts().to_string())
+    if idx.empty:
+        print("No valid samples were produced.")
+    else:
+        print(idx["category"].value_counts().to_string())
 
 
 if __name__ == "__main__":

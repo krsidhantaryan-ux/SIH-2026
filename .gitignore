@@ -4,8 +4,21 @@ data/raw/
 *.nc
 # large processed tensors stay out too; keep only small demo artifacts
 data/processed/*/samples.npz
+data/processed/kaggle_insat3d_manifest.csv
 __pycache__/
 *.pyc
 .venv/
 models/*.pt
 models/*.onnx
+# The reviewed demo baseline is intentionally versioned by digest; future
+# training outputs remain ignored until explicitly promoted.
+!models/cyclonet_insat3d_legacy.onnx
+
+# Frontend/build and local tooling
+web/node_modules/
+web/dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.pytest_cache/

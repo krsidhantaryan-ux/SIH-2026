@@ -12,7 +12,7 @@
 | Target accessibility | WCAG 2.2 Level AA for critical workflows |
 | Primary form factor | Desktop analyst workstation; responsive critical read-only views |
 
-> All screens in this document are target designs, not currently implemented. Meteorological labels, category policy, alert thresholds, and operating procedures require review by qualified domain stakeholders.
+> The demonstration MVP now implements the core overview, historical replay, image-analysis laboratory, data/model transparency, report, responsive, and degraded/qualification experiences described here. Administrative, institutional identity, persistent audit, complete alert inbox, multi-storm, and pilot workflows remain target designs. Meteorological labels, category policy, alert thresholds, and operating procedures still require review by qualified domain stakeholders.
 
 ---
 

@@ -9,7 +9,7 @@
 | Related requirements | [PRD](PRD.md), [SRS](SRS.md) |
 | Primary audience | Software, ML, data, platform, security, QA, and technical reviewers |
 
-> This is a reference architecture, not a description of a deployed system. The current repository contains a dataset builder and small demonstration artefacts. Target components are introduced incrementally and remain subject to architecture and domain review.
+> This is a reference architecture, not a claim of an operationally deployed system. The repository contains a working single-process demonstration vertical slice (dataset builder, historical API/UI, manifest-driven legacy ONNX inference, reports, tests, and container packaging). Target live-source, durable, identity, detection/prediction, and pilot components remain subject to architecture, scientific, security, and domain review.
 
 ---
 
@@ -63,7 +63,7 @@ It does not define official meteorological operating procedures or claim model p
 
 ## 3. Current-state architecture
 
-The repository currently implements a batch prototype:
+The repository now implements a demonstration vertical slice while retaining the batch data foundation:
 
 ```mermaid
 flowchart LR
@@ -73,27 +73,36 @@ flowchart LR
     Raw --> Builder[src/build_dataset.py]
     Builder --> NPZ[(per-storm samples.npz ignored by Git)]
     Builder --> Index[data/processed/index.csv]
-    Index --> Plot[data/processed/phailin_lifecycle.png]
+    Index --> API[FastAPI historical repository]
+    Manifest[models/active-model.json] --> Runtime[ONNX model adapter]
+    Model[Legacy intensity ONNX] --> Runtime
+    Runtime --> API
+    API --> Web[React analyst console]
+    API --> Report[HTML/print report]
 ```
 
-`src/build_dataset.py` parses HURSAT filenames, time-matches an IBTrACS track, reads `IRWIN`, normalises a 301 × 301 image to `uint8`, and writes samples and labels. This proves part of the historical data path but currently combines adapter, policy, preprocessing, and persistence concerns in one script.
+`src/build_dataset.py` parses HURSAT filenames, time-matches an IBTrACS track, reads `IRWIN`, normalises a 301 × 301 image to `uint8`, and writes samples and labels. `app/` exposes that committed historical index and the active model through relative `/api/v1` contracts. `web/` provides replay, map/chart, upload, provenance, model-control, report, and alert-review experiences. The active model is selected through a checksum-pinned JSON manifest so a future validated ONNX model can replace the legacy checkpoint without changing API consumers.
 
 ### 3.1 Current-state strengths
 
-- Raw and large tensor artefacts are excluded from Git.
-- Download and transformation are scriptable.
-- Input labels and satellite imagery are paired without manual frame annotation.
+- Raw and large per-storm tensors are excluded from Git while the promoted 4.8 MB demo ONNX artefact is checksum pinned.
+- Download, transformation, model-format conversion, API serving, frontend build, testing, and container execution are scriptable.
+- Input labels and historical imagery are paired without manual frame annotation.
 - Sample metadata include storm, time, satellite, intensity, position, and category.
+- FastAPI serves one versioned relative-URL contract and the production React bundle from a single origin.
+- The model boundary is manifest-driven: artefact, digest, input dimensions, colour order, scaling, output, provenance, and validation state are externalised.
+- Tests cover policy boundaries, historical derivation, model integrity/preprocessing/determinism, upload errors, alert transitions, and reports.
 
 ### 3.2 Current-state limitations
 
-- Only one demonstrated storm; no storm-disjoint split manifest.
-- No checksums, source licence record, immutable manifests, schema validation, or automated tests.
-- Filename parsing and `IRWIN` assumptions are HURSAT-specific.
-- Wind source preference and category mapping are embedded code constants and require domain review.
-- Multiple satellite views at one valid time may introduce near-duplicate samples unless controlled.
-- No model training/registry/serving, API, UI, queue, identity, audit, observability, or deployment automation.
-- Dependency versions are unpinned.
+- Only one demonstrated replay storm exists; there is no multi-storm training manifest or storm-disjoint evaluation.
+- The bundled legacy CNN has no published held-out evaluation or calibrated uncertainty and is not approved beyond demo use.
+- Filename parsing and `IRWIN` assumptions in the historical builder remain HURSAT-specific.
+- Wind-source preference and category mapping require meteorological review despite being centralised/versioned in the application.
+- Multiple satellite views at one valid time may introduce near-duplicate training samples unless controlled.
+- No validated broad-area detection or temporal prediction model is present; forecast/RI views use explicit past-only baselines.
+- Alert review is process memory; no durable queue/database/object store, institutional identity, protected audit, live-source scheduler, or pilot observability exists.
+- Docker/Compose packaging exists, but CI/CD and production infrastructure automation remain target state.
 
 ---
 
