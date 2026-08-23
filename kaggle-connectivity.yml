@@ -1,0 +1,85 @@
+name: Kaggle connectivity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-kaggle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+
+    steps:
+      - name: Check secret availability
+        shell: bash
+        run: |
+          if [[ -z "$KGAT_64daa74084083ebfb3760ce6a3189d3e" ]]; then
+            echo "KAGGLE_API_TOKEN is not available"
+            exit 1
+          fi
+          echo "Kaggle token is available; its value will not be printed."
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install KaggleHub
+        run: python -m pip install "kagglehub==1.0.2"
+
+      - name: Test INSAT-3D dataset access
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/kaggle-insat3d
+        run: |
+          python - <<'PY'
+          import csv
+          import os
+          from pathlib import Path
+
+          import kagglehub
+
+          dataset = (
+              "sshubam/"
+              "insat3d-infrared-raw-cyclone-images-20132021"
+          )
+          filename = "insat_3d_ds - Sheet.csv"
+
+          destination = Path(os.environ["OUTPUT_DIR"])
+          downloaded = Path(
+              kagglehub.dataset_download(
+                  dataset,
+                  path=filename,
+                  output_dir=str(destination),
+                  force_download=True,
+              )
+          )
+
+          candidates = (
+              [downloaded]
+              if downloaded.is_file()
+              else list(downloaded.rglob("*.csv"))
+          )
+          if not candidates:
+              candidates = list(destination.rglob("*.csv"))
+
+          if not candidates:
+              raise SystemExit("Label CSV was not downloaded")
+
+          with candidates[0].open(
+              newline="", encoding="utf-8-sig"
+          ) as handle:
+              rows = list(csv.reader(handle))
+
+          if len(rows) < 2 or len(rows[0]) < 2:
+              raise SystemExit("Downloaded CSV has an invalid structure")
+
+          print("KAGGLE_CONNECTION_OK")
+          print(f"File: {candidates[0].name}")
+          print(f"Rows including header: {len(rows)}")
+          print(f"Columns: {len(rows[0])}")
+          PY
