@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+web/node_modules
+web/dist
+data/raw
+data/processed/*/samples.npz
+models/*.pt
+*.tar.gz
+.env*
+docs
+/tmp

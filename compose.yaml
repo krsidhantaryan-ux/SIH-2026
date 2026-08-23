@@ -1,0 +1,19 @@
+services:
+  cyclone-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cyclone-ai:mvp
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: demo
+      PORT: "8000"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
