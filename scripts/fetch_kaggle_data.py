@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Download and validate the selected Kaggle INSAT-3D dataset.
 
-The script is intentionally separate from application startup. Raw images stay
-under ``data/raw`` and are never committed. It can be used once Kaggle network
-access is available locally or from a CI/Kaggle runner.
+The script is intentionally separate from application startup. By default it
+downloads with ``kagglehub`` and keeps raw images under ``data/raw`` (never
+committed). With ``--local-root`` it instead validates a dataset that already
+exists on disk — for example the repo-committed copy under
+``data/kaggle_insat3d`` — so no network or Kaggle credentials are needed.
 
-Authentication (never commit or print values):
+Authentication (only for download mode; never commit or print values):
   KAGGLE_USERNAME / KAGGLE_KEY, or KAGGLE_API_TOKEN
 """
 
@@ -17,7 +19,6 @@ import hashlib
 import sys
 from pathlib import Path
 
-import kagglehub
 from PIL import Image, UnidentifiedImageError
 
 DEFAULT_HANDLE = "sshubam/insat3d-infrared-raw-cyclone-images-20132021"
@@ -60,6 +61,15 @@ def sha256(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--handle", default=DEFAULT_HANDLE)
+    parser.add_argument(
+        "--local-root",
+        type=Path,
+        default=None,
+        help=(
+            "Validate an already-downloaded dataset directory (e.g. the "
+            "repo-committed data/kaggle_insat3d) instead of downloading."
+        ),
+    )
     parser.add_argument("--output", type=Path, default=Path("data/raw/kaggle_insat3d"))
     parser.add_argument(
         "--manifest",
@@ -69,15 +79,27 @@ def main() -> None:
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
-    args.output.mkdir(parents=True, exist_ok=True)
-    downloaded = Path(
-        kagglehub.dataset_download(
-            args.handle,
-            output_dir=str(args.output),
-            force_download=args.force,
+    if args.local_root:
+        if not args.local_root.is_dir():
+            raise SystemExit(f"--local-root is not a directory: {args.local_root}")
+        root = args.local_root
+    else:
+        try:
+            import kagglehub
+        except ImportError as error:
+            raise SystemExit(
+                "kagglehub is not installed. Run `pip install kagglehub`, or "
+                "pass --local-root to validate an already-downloaded dataset."
+            ) from error
+        args.output.mkdir(parents=True, exist_ok=True)
+        downloaded = Path(
+            kagglehub.dataset_download(
+                args.handle,
+                output_dir=str(args.output),
+                force_download=args.force,
+            )
         )
-    )
-    root = downloaded if downloaded.is_dir() else args.output
+        root = downloaded if downloaded.is_dir() else args.output
     label_path = find_label_csv(root)
     images = {
         path.name: path
