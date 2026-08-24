@@ -153,8 +153,8 @@ def status() -> dict[str, Any]:
                 "status": "ready" if intensity_model.ready else "degraded",
             },
             {
-                "id": "legacy-cnn",
-                "name": "Legacy Kaggle-trained CNN baseline",
+                "id": "intensity-cnn",
+                "name": "INSAT-3D trained intensity CNN",
                 "status": "ready" if intensity_model.ready else "unavailable",
                 "qualification": "demonstration_only_unvalidated",
             },
@@ -257,7 +257,7 @@ def _mean(values: list[int]) -> float:
 
 
 def _analyse_image(image: Image.Image) -> dict[str, Any]:
-    """Run the legacy CNN and compute transparent morphology context.
+    """Run the trained intensity CNN and compute transparent morphology context.
 
     The CNN supplies the intensity estimate. The hand-computed morphology
     metrics are explanatory context only and do not alter the prediction.
@@ -321,13 +321,13 @@ def _analyse_image(image: Image.Image) -> dict[str, Any]:
         },
         "method": {
             **intensity_model.metadata(),
-            "type": "legacy_pretrained_cnn",
+            "type": "trained_intensity_cnn",
             "trained_model": True,
             "replaceable": True,
             "limitations": [
-                "The source project did not publish a cyclone-separated held-out evaluation.",
+                "Trained in-repo on a small public INSAT-3D image set; no storm-disjoint held-out evaluation is published.",
                 "No calibrated confidence interval is available.",
-                "Input must resemble the INSAT-3D imagery used by the legacy training pipeline.",
+                "Input must resemble the INSAT-3D IR cyclone imagery used by the training pipeline.",
                 "Morphology metrics are explanatory context and do not drive the CNN output.",
                 "Demonstration use only; not validated meteorological guidance.",
             ],
@@ -406,7 +406,7 @@ async def analyse_upload(
         },
         "result": analysis,
         "category_profile_id": CATEGORY_PROFILE_ID,
-        "disclaimer": "Legacy pretrained CNN demonstration only — independently unvalidated and not an official forecast or warning.",
+        "disclaimer": "Trained CNN prototype — demonstration only, independently unvalidated and not an official forecast or warning.",
     }
 
 
@@ -442,7 +442,7 @@ small{{color:#667085}} @media print{{body{{margin:0}} .no-print{{display:none}}}
 <tr><th>Satellite records</th><td>{html.escape(satellites)}</td></tr>
 <tr><th>Category profile</th><td>{CATEGORY_PROFILE_ID}</td></tr>
 <tr><th>RI definition</th><td>{html.escape(point["ri"]["definition"])}; threshold {point["ri"]["threshold"] * 100:.0f}%</td></tr>
-<tr><th>Method</th><td>Historical best-track display plus a past-only linear-trend/persistence baseline. The separate upload laboratory uses the legacy CNN; it does not generate this historical forecast.</td></tr>
+<tr><th>Method</th><td>Historical best-track display plus a past-only linear-trend/persistence baseline. The separate upload laboratory uses the trained image CNN; it does not generate this historical forecast.</td></tr>
 </tbody></table><p><small>Analysis ID: {html.escape(analysis["analysis_id"])}<br>Source index: HURSAT-B1/IBTrACS demonstration data committed with the Cyclone-AI repository.</small></p>
 <p class="no-print"><button onclick="window.print()">Print / save as PDF</button></p></body></html>"""
 

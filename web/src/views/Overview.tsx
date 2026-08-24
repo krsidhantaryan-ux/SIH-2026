@@ -206,7 +206,7 @@ export default function Overview({
               <strong>{point.ri.definition}</strong>
               <p>
                 Derived only from observations available at this selected time. It is a transparent trend rule,
-                not the legacy image CNN.
+                not the image intensity CNN.
               </p>
               <div className="threshold-bar">
                 <span style={{ width: `${point.ri.probability * 100}%` }} />

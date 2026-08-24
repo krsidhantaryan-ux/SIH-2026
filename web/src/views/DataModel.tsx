@@ -63,20 +63,24 @@ export default function DataModel({ status }: Props) {
         <article className="panel model-card-main">
           <header className="model-hero-header">
             <div className="model-cube"><Box size={29} /><span /></div>
-            <div><span className="result-kicker">Active intensity model</span><h2>{status.model.id}</h2><p>Legacy Kaggle-trained CNN · converted to portable ONNX</p></div>
+            <div><span className="result-kicker">Active intensity model</span><h2>{status.model.id}</h2><p>Trained in-repo on INSAT-3D imagery · distribution-shaped by IBTrACS NI · exported to ONNX</p></div>
             <span className="legacy-badge"><CircleAlert size={13} /> Demo only</span>
           </header>
           <div className="model-spec-grid">
             <Spec icon={<Cpu size={17} />} label="Runtime" value={status.model.runtime} />
             <Spec icon={<SlidersHorizontal size={17} />} label="Task" value="Image → Vmax regression" />
             <Spec icon={<ShieldCheck size={17} />} label="Integrity" value="SHA-256 verified" />
-            <Spec icon={<LockKeyhole size={17} />} label="Validation" value="Legacy unvalidated" warning />
+            <Spec icon={<LockKeyhole size={17} />} label="Validation" value="Prototype · unvalidated" warning />
           </div>
           <div className="model-hash"><span>Artefact digest</span><code>{status.model.sha256}</code></div>
           <div className="model-links">
-            <a href={status.model.source_repository} target="_blank" rel="noreferrer">Upstream source <ExternalLink size={13} /></a>
-            <a href={status.model.training_dataset} target="_blank" rel="noreferrer">Training dataset <ExternalLink size={13} /></a>
-            <a href="https://github.com/krsidhantaryan-ux/SIH-2026/blob/arena/01a02f8d-sih-2026/models/MODEL_CARD.md" target="_blank" rel="noreferrer">Model card <ExternalLink size={13} /></a>
+            {isUrl(status.model.source_repository) && (
+              <a href={status.model.source_repository} target="_blank" rel="noreferrer">Source <ExternalLink size={13} /></a>
+            )}
+            {isUrl(status.model.training_dataset) && (
+              <a href={status.model.training_dataset} target="_blank" rel="noreferrer">Training dataset <ExternalLink size={13} /></a>
+            )}
+            <a href="https://github.com/krsidhantaryan-ux/SIH-2026/blob/arena/01a033e2-sih-2026/models/MODEL_CARD.md" target="_blank" rel="noreferrer">Model card <ExternalLink size={13} /></a>
           </div>
         </article>
 
@@ -114,11 +118,15 @@ export default function DataModel({ status }: Props) {
 
       <section className="governance-grid">
         <article className="panel"><div className="governance-icon blue"><ShieldCheck size={21} /></div><h3>What we can claim</h3><ul><li>Real ONNX inference executes on uploaded images</li><li>Model and data provenance are visible</li><li>Historical forecasts use past data only</li><li>Model artefacts are checksum verified</li></ul></article>
-        <article className="panel"><div className="governance-icon amber"><CircleAlert size={21} /></div><h3>What we cannot claim yet</h3><ul><li>Operational or official forecast accuracy</li><li>Held-out performance for the legacy CNN</li><li>Calibrated uncertainty or RI probability</li><li>Generalisation across sensors and storms</li></ul></article>
+        <article className="panel"><div className="governance-icon amber"><CircleAlert size={21} /></div><h3>What we cannot claim yet</h3><ul><li>Operational or official forecast accuracy</li><li>Held-out performance beyond the small prototype split</li><li>Calibrated uncertainty or RI probability</li><li>Generalisation across sensors and storms</li></ul></article>
         <article className="panel"><div className="governance-icon purple"><GitBranch size={21} /></div><h3>Next scientific gate</h3><ul><li>Acquire labelled multi-storm imagery</li><li>Remove duplicates and group by cyclone</li><li>Benchmark against persistence</li><li>Publish model card and slice metrics</li></ul></article>
       </section>
     </div>
   );
+}
+
+function isUrl(value: string | undefined | null): value is string {
+  return typeof value === "string" && /^https?:\/\//i.test(value);
 }
 
 function Spec({ icon, label, value, warning = false }: { icon: React.ReactNode; label: string; value: string; warning?: boolean }) {
