@@ -1,0 +1,9 @@
+# Training-only dependencies for scripts/train_intensity_cnn.py.
+# Runtime/API dependencies stay in requirements-api.txt; the trained ONNX is
+# served by onnxruntime + Pillow only, so torch is not needed at runtime.
+torch>=2.2
+onnx>=1.16
+onnxscript>=0.1
+onnxruntime>=1.18
+Pillow>=10.0
+numpy>=1.26

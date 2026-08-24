@@ -50,7 +50,7 @@ def test_health_status_and_model_metadata() -> None:
     body = response.json()
     assert body["mode"] == "historical_demo"
     assert body["model"]["status"] == "ready"
-    assert body["model"]["validation_status"] == "legacy_unvalidated"
+    assert body["model"]["validation_status"] == "prototype_trained"
     assert intensity_model.ready
 
     active = client.get("/api/v1/models/active")

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_active_model_integrity_signature_and_determinism() -> None:
     model = load_intensity_model(ROOT / "models/active-model.json")
     assert model.ready, model.load_error
-    assert model.metadata()["validation_status"] == "legacy_unvalidated"
+    assert model.metadata()["validation_status"] == "prototype_trained"
     image = Image.fromarray(np.full((250, 250, 3), 128, dtype=np.uint8), "RGB")
     first = model.predict(image)
     second = model.predict(image)

@@ -87,7 +87,7 @@ export default function AnalysisLab({ status }: Props) {
     <div className="view-stack analysis-view">
       <section className="page-heading">
         <div>
-          <div className="eyebrow"><FlaskConical size={13} /> Analysis laboratory · Legacy CNN</div>
+          <div className="eyebrow"><FlaskConical size={13} /> Analysis laboratory · Trained CNN</div>
           <div className="heading-row"><h1>INSAT-3D intensity analysis</h1><span className="storm-tag lab">Demo</span></div>
           <p>Upload one storm-centred IR image to exercise the real ONNX inference pipeline.</p>
         </div>
@@ -99,8 +99,8 @@ export default function AnalysisLab({ status }: Props) {
 
       <section className="mode-notice caution">
         <AlertTriangle size={17} />
-        <div><strong>Legacy, independently unvalidated model</strong><span>Useful for demonstrating replaceable inference—not for operational accuracy claims.</span></div>
-        <a href="https://github.com/cycloneintensity/CrossKnotHacks-Cyclonet" target="_blank" rel="noreferrer">View source <ArrowRight size={14} /></a>
+        <div><strong>Prototype trained model — demonstration only</strong><span>Trained in-repo on INSAT-3D imagery with IBTrACS NI labels; not validated for operational use.</span></div>
+        <a href="https://www.ncdc.noaa.gov/ibtracs/" target="_blank" rel="noreferrer">Data source <ArrowRight size={14} /></a>
       </section>
 
       <section className="lab-grid">
@@ -160,7 +160,7 @@ export default function AnalysisLab({ status }: Props) {
           <header className="panel-header"><div><h2>Inference pipeline</h2><p>Every transformation is explicit and replaceable</p></div></header>
           <div className="pipeline-list">
             <PipelineStep number="01" icon={<ShieldCheck size={18} />} title="Validate input" detail="Media signature, dimensions and 10 MB bound" state={file ? "done" : "waiting"} />
-            <PipelineStep number="02" icon={<ScanSearch size={18} />} title="Preprocess" detail="Centre-fit to 250 × 250 · legacy BGR / [0,1]" state={busy || result ? "done" : file ? "ready" : "waiting"} />
+            <PipelineStep number="02" icon={<ScanSearch size={18} />} title="Preprocess" detail="Centre-fit to 250 × 250 · BGR / [0,1]" state={busy || result ? "done" : file ? "ready" : "waiting"} />
             <PipelineStep number="03" icon={<Cpu size={18} />} title="ONNX inference" detail="CNN regression to one Vmax value in knots" state={result ? "done" : busy ? "active" : "waiting"} />
             <PipelineStep number="04" icon={<Wind size={18} />} title="Policy mapping" detail="Continuous wind → versioned demo IMD category" state={result ? "done" : "waiting"} />
           </div>
@@ -183,7 +183,7 @@ export default function AnalysisLab({ status }: Props) {
               <span>Estimated maximum sustained wind</span>
               <strong>{result.result.vmax_kt.toFixed(1)}<small> kt</small></strong>
               <div className="category-result">{result.result.category.name}<b>{result.result.category.code}</b></div>
-              <p><AlertTriangle size={14} /> Confidence interval unavailable: this legacy checkpoint has no published calibration.</p>
+              <p><AlertTriangle size={14} /> Confidence interval unavailable: this prototype checkpoint has no published calibration.</p>
             </article>
             <article className="result-pattern">
               <span>Structure interpretation</span>
@@ -199,7 +199,7 @@ export default function AnalysisLab({ status }: Props) {
               <h3>{result.result.method.id}</h3>
               <dl>
                 <div><dt>Runtime</dt><dd>ONNX / CPU</dd></div>
-                <div><dt>Validation</dt><dd className="warning-text">Legacy unvalidated</dd></div>
+                <div><dt>Validation</dt><dd className="warning-text">Prototype · unvalidated</dd></div>
                 <div><dt>Model replaceable</dt><dd>Yes · manifest driven</dd></div>
                 <div><dt>Analysis ID</dt><dd>{result.analysis_id.slice(0, 24)}…</dd></div>
               </dl>

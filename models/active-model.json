@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "id": "cyclonet-insat3d-legacy-onnx@0.1.0",
+  "id": "cyclonet-insat3d-trained-onnx@0.2.0",
   "task": "intensity_regression",
   "artifact": {
-    "path": "cyclonet_insat3d_legacy.onnx",
-    "sha256": "bc564085d0ceea1ba684839b44fc189c20a4bb0ea2057fdf81da8ff410b495ea",
+    "path": "cyclonet_insat3d_trained.onnx",
+    "sha256": "8b75f7dc7cbd29c7c39d9b4b2429fbabb6760eb97c074752a6dde34a16e42093",
     "format": "onnx",
     "opset": 18
   },
@@ -24,9 +24,9 @@
     "unit": "kt",
     "shape": [1, 1]
   },
-  "source_repository": "https://github.com/cycloneintensity/CrossKnotHacks-Cyclonet",
-  "training_dataset": "https://www.kaggle.com/datasets/sshubam/insat3d-infrared-raw-cyclone-images-20132021",
-  "validation_status": "legacy_unvalidated",
+  "source_repository": "local (scripts/train_intensity_cnn.py)",
+  "training_dataset": "data/kaggle_insat3d (INSAT-3D IR/raw/reference imagery + sheet labels), distribution-shaped by IBTrACS NI v04r01",
+  "validation_status": "prototype_trained",
   "model_card": "models/MODEL_CARD.md",
   "approved_modes": ["demo", "historical_demo", "user_supplied_demo"],
   "operational_use": false

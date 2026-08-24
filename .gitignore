@@ -8,11 +8,13 @@ data/processed/kaggle_insat3d_manifest.csv
 __pycache__/
 *.pyc
 .venv/
+.venv-train/
 models/*.pt
 models/*.onnx
-# The reviewed demo baseline is intentionally versioned by digest; future
+# Reviewed demo baselines are intentionally versioned by digest; other
 # training outputs remain ignored until explicitly promoted.
 !models/cyclonet_insat3d_legacy.onnx
+!models/cyclonet_insat3d_trained.onnx
 
 # Frontend/build and local tooling
 web/node_modules/
