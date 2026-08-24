@@ -160,4 +160,4 @@ export interface UploadResult {
   disclaimer: string;
 }
 
-export type ViewName = "overview" | "analysis" | "data";
+export type ViewName = "overview" | "comparison" | "analysis" | "data";

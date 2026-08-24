@@ -8,12 +8,19 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_committed_dataset_loads_without_unknown_categories() -> None:
     repository = StormRepository(ROOT / "data/processed/index.csv")
     storms = repository.list_storms()
-    assert len(storms) == 1
-    storm = repository.get_storm(storms[0]["storm_id"])
+    assert len(storms) >= 1
+    storm = repository.get_storm("2013281N12098")
     assert storm is not None
     assert storm["name"] == "PHAILIN"
     assert storm["observation_count"] > 40
     assert all(point["category"]["name"] != "Unknown" for point in storm["track"])
+    # Verify all loaded storms have valid metadata and categories
+    for s_item in storms:
+        loaded = repository.get_storm(s_item["storm_id"])
+        assert loaded is not None
+        assert len(loaded["track"]) > 10
+        assert all(p["category"]["name"] != "Unknown" for p in loaded["track"])
+
 
 
 def test_forecast_uses_only_current_and_past_but_exposes_historical_reference() -> None:
