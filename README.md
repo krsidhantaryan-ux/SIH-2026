@@ -103,7 +103,19 @@ When Kaggle access is available, the selected INSAT-3D dataset can be downloaded
 python scripts/fetch_kaggle_data.py
 ```
 
-The importer writes raw images under ignored `data/raw/` and creates a checksummed label manifest. It deliberately warns that the source CSV lacks reliable storm identity; a future evaluation must enrich/group samples before claiming storm-disjoint accuracy.
+Alternatively, the dataset can be committed to the repository at
+[`data/kaggle_insat3d/`](data/kaggle_insat3d/README.md) (see that folder's
+README for placement rules), then validated offline with no Kaggle
+credentials:
+
+```bash
+python scripts/fetch_kaggle_data.py --local-root data/kaggle_insat3d
+```
+
+The importer writes raw images under ignored `data/raw/` (download mode) and
+creates a checksummed label manifest. It deliberately warns that the source
+CSV lacks reliable storm identity; a future evaluation must enrich/group
+samples before claiming storm-disjoint accuracy.
 
 ## API
 

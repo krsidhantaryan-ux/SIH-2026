@@ -81,15 +81,15 @@ export default function DataModel({ status }: Props) {
         </article>
 
         <article className="panel dataset-card">
-          <header className="panel-header"><div><h2>Demonstration dataset</h2><p>Committed metadata and verified imagery</p></div><Database size={19} /></header>
-          <div className="dataset-number"><strong>{status.dataset.source_row_count}</strong><span>source rows</span></div>
+          <header className="panel-header"><div><h2>Active Storm Dataset</h2><p>Committed metadata, multi-satellite fixes, and verified imagery</p></div><Database size={19} /></header>
+          <div className="dataset-number"><strong>{status.dataset.source_row_count}</strong><span>source fixes</span></div>
           <div className="dataset-stats">
             <div><strong>{status.dataset.observation_count}</strong><span>unique valid times</span></div>
-            <div><strong>{status.dataset.storm_count}</strong><span>complete storm</span></div>
+            <div><strong>{status.dataset.storm_count}</strong><span>NIO benchmark storms</span></div>
             <div><strong>{status.dataset.satellites.length}</strong><span>satellites</span></div>
           </div>
           <div className="satellite-list">{status.dataset.satellites.map((satellite) => <span key={satellite}><Satellite size={12} />{satellite}</span>)}</div>
-          <p className="dataset-note"><CircleAlert size={14} /> Phailin-only data supports replay and integration testing, not new model training.</p>
+          <p className="dataset-note"><CircleAlert size={14} /> Multi-storm index loaded with Phailin, Hudhud, Vardah, Fani, Amphan, Tauktae, and Biparjoy.</p>
         </article>
       </section>
 

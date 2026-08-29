@@ -1,5 +1,27 @@
 import type { Storm, SystemStatus, UploadResult } from "./types";
 
+export interface StormListItem {
+  storm_id: string;
+  sid: string;
+  name: string;
+  basin: string;
+  mode: string;
+  status: string;
+  first_valid_time: string;
+  last_valid_time: string;
+  peak: {
+    vmax_kt: number;
+    valid_time: string;
+    category: {
+      name: string;
+      code: string;
+      tone: string;
+    };
+  };
+  observation_count: number;
+  satellites: string[];
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
@@ -17,6 +39,12 @@ async function parseResponse<T>(response: Response): Promise<T> {
 export async function getStatus(signal?: AbortSignal): Promise<SystemStatus> {
   return parseResponse(
     await fetch("/api/v1/status", { signal, headers: { Accept: "application/json" } }),
+  );
+}
+
+export async function getStorms(signal?: AbortSignal): Promise<{ items: StormListItem[]; count: number }> {
+  return parseResponse(
+    await fetch("/api/v1/storms", { signal, headers: { Accept: "application/json" } }),
   );
 }
 
@@ -50,3 +78,4 @@ export async function transitionAlert(
     }),
   );
 }
+

@@ -240,6 +240,50 @@ class StormRepository:
                 )
             point["forecasts"] = forecasts
 
+    @staticmethod
+    def _keyframes_for_storm(
+        sid: str, name: str, points: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        slug = name.lower()
+        if not points:
+            return []
+        peak_idx = max(range(len(points)), key=lambda i: points[i]["vmax_kt"])
+        n = len(points)
+        idx_0 = 0
+        idx_1 = max(1, min(peak_idx // 2, n - 1))
+        idx_2 = peak_idx
+        idx_3 = (
+            max(peak_idx + 1, min(peak_idx + (n - peak_idx) // 2, n - 1))
+            if peak_idx < n - 1
+            else n - 1
+        )
+        selected_indices = [idx_0, idx_1, idx_2, idx_3]
+        labels = [
+            "Early organisation",
+            "Rapid organisation",
+            "Mature eye structure",
+            "Post-landfall decay",
+        ]
+        suffixes = ["formation", "intensifying", "peak", "decaying"]
+        keyframes = []
+        for i, (p_idx, label, suffix) in enumerate(
+            zip(selected_indices, labels, suffixes, strict=True), 1
+        ):
+            p = points[p_idx]
+            fname = f"{slug}-0{i}-{suffix}.png"
+            keyframes.append(
+                {
+                    "valid_time": p["valid_time"],
+                    "url": f"/imagery/{fname}",
+                    "label": label,
+                    "source": "HURSAT-B1 / Meteosat-7"
+                    if sid == "2013281N12098"
+                    else "INSAT-3D / HURSAT-B1",
+                    "embedded_wind_kt": round(p["vmax_kt"]),
+                }
+            )
+        return keyframes
+
     def _build_storm(self, sid: str, rows: list[SourceRow]) -> dict[str, Any]:
         by_time: dict[datetime, list[SourceRow]] = defaultdict(list)
         for row in rows:
@@ -299,7 +343,9 @@ class StormRepository:
             "storm_id": sid,
             "sid": sid,
             "name": name,
-            "basin": "North Indian Ocean",
+            "basin": "Arabian Sea"
+            if name in ("TAUKTAE", "BIPARJOY")
+            else "Bay of Bengal",
             "mode": "historical_demo",
             "status": "historical",
             "category_profile_id": CATEGORY_PROFILE_ID,
@@ -315,36 +361,7 @@ class StormRepository:
             "source_row_count": len(rows),
             "satellites": sorted({row.satellite for row in rows}),
             "alerts": alerts,
-            "imagery_keyframes": [
-                {
-                    "valid_time": "2013-10-07T12:00:00Z",
-                    "url": "/imagery/phailin-01-formation.png",
-                    "label": "Early organisation",
-                    "source": "HURSAT-B1 / Meteosat-7",
-                    "embedded_wind_kt": 18,
-                },
-                {
-                    "valid_time": "2013-10-09T18:00:00Z",
-                    "url": "/imagery/phailin-02-intensifying.png",
-                    "label": "Rapid organisation",
-                    "source": "HURSAT-B1 / Meteosat-7",
-                    "embedded_wind_kt": 44,
-                },
-                {
-                    "valid_time": "2013-10-12T00:00:00Z",
-                    "url": "/imagery/phailin-03-peak.png",
-                    "label": "Mature eye structure",
-                    "source": "HURSAT-B1 / Meteosat-7",
-                    "embedded_wind_kt": 119,
-                },
-                {
-                    "valid_time": "2013-10-13T09:00:00Z",
-                    "url": "/imagery/phailin-04-decaying.png",
-                    "label": "Post-landfall decay",
-                    "source": "HURSAT-B1 / Meteosat-7",
-                    "embedded_wind_kt": 39,
-                },
-            ],
+            "imagery_keyframes": self._keyframes_for_storm(sid, name, points),
         }
 
     @staticmethod
